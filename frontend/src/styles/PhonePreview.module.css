@@ -1,0 +1,157 @@
+.phoneWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.liveLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #55556a;
+  letter-spacing: 1.5px;
+}
+
+.phone {
+  width: 220px;
+  height: 440px;
+  background: #1a1a2a;
+  border-radius: 36px;
+  border: 6px solid #2a2a3a;
+  box-shadow: 0 0 0 1px #111, 0 20px 60px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(255,255,255,0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.statusBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 14px 4px;
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  background: rgba(0,0,0,0.3);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.statusRight { font-size: 8px; }
+
+.screen {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: background 0.3s ease;
+}
+
+.screen::-webkit-scrollbar { display: none; }
+
+.content {
+  padding: 16px 14px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-height: 100%;
+}
+
+.logoWrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-bottom: 4px;
+  transition: background 0.3s;
+}
+
+.logoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.channelName {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-align: center;
+  transition: color 0.3s;
+}
+
+.channelTitle {
+  font-size: 16px;
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.2;
+  transition: color 0.3s;
+  font-family: 'Syne', sans-serif;
+}
+
+.subRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  transition: color 0.3s;
+}
+
+.desc {
+  font-size: 10.5px;
+  text-align: center;
+  line-height: 1.5;
+  transition: color 0.3s;
+  opacity: 0.85;
+}
+
+.desc2 {
+  font-size: 10px;
+  text-align: center;
+  line-height: 1.4;
+  transition: color 0.3s;
+  opacity: 0.7;
+}
+
+.cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  transition: background 0.3s, color 0.3s;
+  margin-top: 4px;
+}
+
+.disclaimer {
+  font-size: 8px;
+  text-align: center;
+  line-height: 1.4;
+  transition: color 0.3s;
+  margin-top: 4px;
+}
+
+.homeBar {
+  height: 4px;
+  margin: 6px auto;
+  width: 60px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 2px;
+  flex-shrink: 0;
+}

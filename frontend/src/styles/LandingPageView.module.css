@@ -1,0 +1,158 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.fullPage {
+  min-height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.4s ease;
+  padding: 20px 16px;
+}
+
+/* Phone frame — fixed mobile width, never wider */
+.phoneFrame {
+  width: 100%;
+  max-width: 390px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 40px 24px 32px;
+  flex: 1;
+}
+
+/* Logo */
+.logoWrap {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: background 0.4s;
+}
+
+.logoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Text */
+.channelName {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-align: center;
+  transition: color 0.4s;
+}
+
+.channelTitle {
+  font-family: 'Syne', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.2;
+  transition: color 0.4s;
+}
+
+.subsRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: 24px;
+  transition: color 0.4s, background 0.4s;
+}
+
+.desc {
+  font-size: 14px;
+  text-align: center;
+  line-height: 1.65;
+  max-width: 320px;
+  transition: color 0.4s;
+}
+
+.divider {
+  width: 60px;
+  height: 1px;
+  border-radius: 2px;
+  transition: background 0.4s;
+}
+
+/* CTA button */
+.ctaBtn {
+  width: 100%;
+  max-width: 320px;
+  padding: 16px 24px;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  letter-spacing: 0.2px;
+}
+
+.ctaBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+}
+
+.ctaBtn:active {
+  transform: translateY(0);
+}
+
+/* Disclaimer */
+.disclaimer {
+  font-size: 10.5px;
+  text-align: center;
+  line-height: 1.6;
+  opacity: 0.45;
+  max-width: 300px;
+  padding-top: 8px;
+}
+
+/* Loading */
+.loader {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(255,255,255,0.1);
+  border-top-color: #7c3aed;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Mobile — fill full screen naturally */
+@media (max-width: 430px) {
+  .fullPage { padding: 0; align-items: flex-start; }
+  .phoneFrame { max-width: 100%; }
+  .content { padding: 48px 20px 40px; }
+}
