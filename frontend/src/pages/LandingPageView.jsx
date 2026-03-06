@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { fetchPageBySlug } from '../services/landingService';
 import styles from '../styles/LandingPageView.module.css';
 
-// Design themes — same palette as PhonePreview
+// ── Design themes ────────────────────────────────────────────
+// Defined outside component — zero re-allocation on render
 const THEMES = {
   'modern-blue':      { bg: 'linear-gradient(160deg,#e8f0fe 0%,#c7d7fd 100%)', card: '#fff', title: '#1a237e', sub: '#3949ab', text: '#374151', btn: 'linear-gradient(90deg,#3b82f6,#6366f1)', btnText: '#fff', subs: '#6366f1' },
   'dark-rose':        { bg: 'linear-gradient(160deg,#1a0a0f 0%,#2d0f1a 100%)', card: 'rgba(255,255,255,0.05)', title: '#fce7f3', sub: '#f9a8d4', text: '#fce7f3', btn: 'linear-gradient(90deg,#e11d48,#be185d)', btnText: '#fff', subs: '#f9a8d4' },
@@ -16,16 +17,20 @@ const THEMES = {
   'vibrant-gradient': { bg: 'linear-gradient(160deg,#7c3aed 0%,#db2777 50%,#ea580c 100%)', card: 'rgba(255,255,255,0.15)', title: '#fff', sub: '#fde68a', text: '#fef3c7', btn: '#fff', btnText: '#7c3aed', subs: '#fde68a' },
   'serene-green':     { bg: 'linear-gradient(160deg,#064e3b 0%,#065f46 100%)', card: 'rgba(255,255,255,0.08)', title: '#d1fae5', sub: '#6ee7b7', text: '#a7f3d0', btn: 'linear-gradient(90deg,#10b981,#059669)', btnText: '#fff', subs: '#6ee7b7' },
   'sunset':           { bg: 'linear-gradient(160deg,#7c2d12 0%,#9a3412 50%,#92400e 100%)', card: 'rgba(255,255,255,0.1)', title: '#fef3c7', sub: '#fcd34d', text: '#fde68a', btn: 'linear-gradient(90deg,#f59e0b,#ef4444)', btnText: '#fff', subs: '#fcd34d' },
+  'obsidian':         { bg: 'linear-gradient(160deg,#07090e 0%,#0d1019 100%)', card: 'rgba(255,255,255,0.03)', title: '#ede9e0', sub: '#d4af37', text: '#9a9080', btn: 'linear-gradient(90deg,#d4af37,#b8922a)', btnText: '#07090e', subs: '#d4af37' },
 };
 
+const DEFAULT_THEME = THEMES['modern-blue'];
+
+// ── Helpers — defined outside component ─────────────────────
 function formatSubs(n) {
   if (!n) return '0';
-  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000)     return (n / 1_000).toFixed(1) + 'K';
   return Number(n).toLocaleString();
 }
 
-// Inject Meta Pixel
+// Pixel injection — called once, side-effect safe
 function injectMetaPixel(pixelId) {
   if (!pixelId || window._mbPixelDone) return;
   window._mbPixelDone = true;
@@ -42,7 +47,6 @@ function injectMetaPixel(pixelId) {
   window.fbq('track', 'PageView');
 }
 
-// Inject Google Tag
 function injectGoogleTag(tagId) {
   if (!tagId || window._mbGtagDone) return;
   window._mbGtagDone = true;
@@ -56,38 +60,60 @@ function injectGoogleTag(tagId) {
   window.gtag('config', tagId);
 }
 
+// Telegram SVG path — constant, no re-render cost
+const TG_PATH = 'M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.88 13.47l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.268.089z';
+
+// Members icon SVG path
+const MEMBERS_PATH = 'M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z';
+
+// ── Component ────────────────────────────────────────────────
 export default function LandingPageView() {
   const { slug } = useParams();
-  const [page, setPage] = useState(null);
+  const [page, setPage]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
+    // fetchPageBySlug should ideally be called with cache headers
+    // so repeat visits are instant (CDN / service worker)
     fetchPageBySlug(slug)
       .then(res => {
         setPage(res.page);
-        // Inject tracking pixels after load
-        if (res.page.metaPixelId) injectMetaPixel(res.page.metaPixelId);
-        if (res.page.googleTagId) injectGoogleTag(res.page.googleTagId);
+        // Defer pixel injection — don't block paint
+        if (res.page.metaPixelId) {
+          requestIdleCallback
+            ? requestIdleCallback(() => injectMetaPixel(res.page.metaPixelId))
+            : setTimeout(() => injectMetaPixel(res.page.metaPixelId), 300);
+        }
+        if (res.page.googleTagId) {
+          requestIdleCallback
+            ? requestIdleCallback(() => injectGoogleTag(res.page.googleTagId))
+            : setTimeout(() => injectGoogleTag(res.page.googleTagId), 300);
+        }
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [slug]);
 
-  const handleCTA = () => {
+  // Stable reference — won't cause re-renders
+  const handleCTA = useCallback(() => {
     if (!page?.channelLink) return;
-    // Fire pixel event on CTA click
     if (window.fbq) window.fbq('track', 'Lead');
-    if (window.gtag) window.gtag('event', 'cta_click', { event_category: 'engagement', event_label: page.channelName });
+    if (window.gtag) window.gtag('event', 'cta_click', {
+      event_category: 'engagement',
+      event_label: page.channelName,
+    });
     window.open(page.channelLink, '_blank', 'noopener,noreferrer');
-  };
+  }, [page?.channelLink, page?.channelName]);
 
+  // ── Loading state ──────────────────────────────────────────
   if (loading) return (
     <div className={styles.fullPage} style={{ background: '#0d0d14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div className={styles.loader} />
     </div>
   );
 
+  // ── Not found ──────────────────────────────────────────────
   if (notFound || !page) return (
     <div className={styles.fullPage} style={{ background: '#0d0d14', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
       <span style={{ fontSize: 48 }}>🔍</span>
@@ -96,54 +122,84 @@ export default function LandingPageView() {
     </div>
   );
 
-  const t = THEMES[page.design] || THEMES['modern-blue'];
+  // Theme lookup — O(1) with fallback
+  const t = THEMES[page.design] ?? DEFAULT_THEME;
 
   return (
     <div className={styles.fullPage} style={{ background: t.bg }}>
       <div className={styles.phoneFrame}>
         <div className={styles.content}>
+
           {/* Logo */}
-          <div className={styles.logoWrap} style={{ borderColor: t.subs + '55', background: t.card }}>
-            {page.logoUrl
-              ? <img src={page.logoUrl} alt={page.channelName} className={styles.logoImg} />
-              : (
-                <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke={t.sub} strokeWidth="1.2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              )
-            }
+          <div
+            className={styles.logoWrap}
+            style={{ borderColor: t.subs + '55', background: t.card }}
+          >
+            {page.logoUrl ? (
+              <img
+                src={page.logoUrl}
+                alt={page.channelName}
+                className={styles.logoImg}
+                /* Largest contentful paint hint — load ASAP */
+                fetchPriority="high"
+                decoding="async"
+                loading="eager"
+              />
+            ) : (
+              <svg width="34" height="34" fill="none" viewBox="0 0 24 24" stroke={t.sub} strokeWidth="1.2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            )}
           </div>
 
           {/* Channel info */}
-          <p className={styles.channelName} style={{ color: t.sub }}>{page.channelName}</p>
-          <h1 className={styles.channelTitle} style={{ color: t.title }}>{page.channelTitle}</h1>
+          <p className={styles.channelName} style={{ color: t.sub }}>
+            {page.channelName}
+          </p>
+
+          <h1 className={styles.channelTitle} style={{ color: t.title }}>
+            {page.channelTitle}
+          </h1>
 
           <div className={styles.subsRow} style={{ color: t.subs, background: t.card }}>
-            <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+            <svg width="13" height="13" fill="currentColor" viewBox="0 0 20 20">
+              <path d={MEMBERS_PATH} />
             </svg>
             {formatSubs(page.subscribers)} Members
           </div>
 
           {/* Descriptions */}
-          <p className={styles.desc} style={{ color: t.text }}>{page.description1}</p>
-          {page.description2 && <p className={styles.desc} style={{ color: t.text, opacity: 0.75 }}>{page.description2}</p>}
+          <p className={styles.desc} style={{ color: t.text }}>
+            {page.description1}
+          </p>
+          {page.description2 && (
+            <p className={styles.desc} style={{ color: t.text, opacity: 0.72 }}>
+              {page.description2}
+            </p>
+          )}
 
           {/* Divider */}
           <div className={styles.divider} style={{ background: t.subs + '33' }} />
 
-          {/* CTA button */}
-          <button className={styles.ctaBtn} style={{ background: t.btn, color: t.btnText }} onClick={handleCTA}>
-            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.88 13.47l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.268.089z"/>
+          {/* CTA */}
+          <button
+            className={styles.ctaBtn}
+            style={{ background: t.btn, color: t.btnText }}
+            onClick={handleCTA}
+          >
+            <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24">
+              <path d={TG_PATH} />
             </svg>
             {page.ctaText || 'Join on Telegram'}
           </button>
 
           {/* Disclaimer */}
           <p className={styles.disclaimer} style={{ color: t.text }}>
-            Disclaimer: All content is for educational purposes only. {page.channelName} is not responsible for any financial decisions. Trading involves risk — please do your own research.
+            Disclaimer: All content is for educational purposes only.{' '}
+            {page.channelName} is not responsible for any financial decisions.
+            Trading involves risk — please do your own research.
           </p>
+
         </div>
       </div>
     </div>

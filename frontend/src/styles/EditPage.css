@@ -1,0 +1,252 @@
+/* ============================================================
+   EditPage.css — MetaBull Universe
+   Extends CreatePage.css — edit-specific overrides & additions
+   ============================================================ */
+
+/* ── Edit body: single scrollable form, no tab chrome ────── */
+.edit-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Edit form column: no tabs, just scrollable content ───── */
+.edit-form-col {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid rgba(255,255,255,0.04);
+  min-height: 0;
+}
+
+.edit-form {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.edit-form::-webkit-scrollbar { width: 3px; }
+.edit-form::-webkit-scrollbar-track { background: transparent; }
+.edit-form::-webkit-scrollbar-thumb {
+  background: rgba(212,175,55,0.12);
+  border-radius: 4px;
+}
+
+/* ── Section dividers inside the edit form ───────────────── */
+.edit-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0 2px;
+}
+
+.edit-section-divider-line {
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.04);
+}
+
+.edit-section-divider-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #3a3530;
+  white-space: nowrap;
+}
+
+.edit-section-divider-label i {
+  font-size: 9px;
+  color: #d4af37;
+  opacity: 0.5;
+}
+
+/* ── Topbar right slot: preview link + save btn ───────────── */
+.edit-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.edit-preview-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  background: none;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 7px;
+  color: #7a7268;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.edit-preview-link:hover {
+  border-color: rgba(212,175,55,0.2);
+  color: #ede9e0;
+}
+
+/* ── Design grid in edit form (slightly smaller cells) ────── */
+.edit-design-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 7px;
+}
+
+/* ── Status badge next to the page title in topbar ───────── */
+.edit-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.edit-status-badge.active {
+  background: rgba(16,185,129,0.08);
+  border: 1px solid rgba(16,185,129,0.18);
+  color: #10b981;
+}
+
+.edit-status-badge.inactive {
+  background: rgba(255,77,109,0.07);
+  border: 1px solid rgba(255,77,109,0.15);
+  color: #ff4d6d;
+}
+
+.edit-status-badge::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ── Unsaved changes indicator ───────────────────────────── */
+.edit-unsaved-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #d4af37;
+  flex-shrink: 0;
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.7); }
+}
+
+.edit-unsaved-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: #d4af37;
+  opacity: 0.7;
+}
+
+/* ── Save success flash ──────────────────────────────────── */
+.edit-save-success {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(16,185,129,0.07);
+  border: 1px solid rgba(16,185,129,0.18);
+  border-radius: 8px;
+  color: #10b981;
+  font-size: 12.5px;
+  font-family: 'DM Sans', sans-serif;
+  animation: slideInDown 0.3s ease both;
+}
+
+@keyframes slideInDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Row 3-col variant for edit form ─────────────────────── */
+.edit-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+/* ── Tracking section wrapper ────────────────────────────── */
+.edit-tracking-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Logo section with remove button ────────────────────── */
+.edit-logo-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #ff4d6d;
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 8px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 2;
+}
+
+.logo-upload:hover .edit-logo-remove {
+  opacity: 1;
+}
+
+.logo-upload {
+  position: relative;
+}
+
+/* ── Responsive: collapse preview at narrow widths ───────── */
+@media (max-width: 960px) {
+  .edit-body {
+    grid-template-columns: 1fr;
+  }
+
+  .create-preview-col {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .edit-row-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .create-row-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-design-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

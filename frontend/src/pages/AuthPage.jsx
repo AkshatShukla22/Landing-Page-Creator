@@ -1,26 +1,27 @@
+// frontend/src/pages/AuthPage.jsx
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { login, register, clearError } from '../store/authSlice';
-import styles from '../styles/AuthPage.module.css';
+import '../styles/AuthPage.css';
 
-const EyeIcon = ({ open }) => open ? (
-  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-    <circle cx="12" cy="12" r="3"/>
-  </svg>
-) : (
-  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
-    <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
-    <line x1="1" y1="1" x2="23" y2="23"/>
-  </svg>
-);
+const features = [
+  { icon: 'fa-solid fa-chart-line',     label: 'Real-time Analytics Dashboard'  },
+  { icon: 'fa-solid fa-layer-group',    label: 'Multi-project Management'        },
+  { icon: 'fa-solid fa-user-shield',    label: 'Role-based Access Control'       },
+  { icon: 'fa-solid fa-bolt',           label: 'Instant Landing Page Builder'    },
+];
+
+const stats = [
+  { num: '10K+',  label: 'Active Users'  },
+  { num: '99.9%', label: 'Uptime'        },
+  { num: '256',   label: 'Data Points'   },
+];
 
 export default function AuthPage() {
-  const [mode, setMode] = useState('login'); // 'login' | 'register'
+  const [mode, setMode]       = useState('login');
   const [showPass, setShowPass] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm]       = useState({ name: '', email: '', password: '' });
   const [localError, setLocalError] = useState('');
 
   const dispatch = useDispatch();
@@ -57,8 +58,7 @@ export default function AuthPage() {
     if (mode === 'login') {
       const result = await dispatch(login({ email: form.email, password: form.password }));
       if (login.fulfilled.match(result)) {
-        const role = result.payload.user.role;
-        navigate(role === 'admin' ? '/admin' : '/home', { replace: true });
+        navigate(result.payload.user.role === 'admin' ? '/admin' : '/home', { replace: true });
       }
     } else {
       const result = await dispatch(register(form));
@@ -71,81 +71,100 @@ export default function AuthPage() {
   const displayError = localError || error;
 
   return (
-    <div className={styles.page}>
-      {/* Background blobs */}
-      <div className={styles.blob1} />
-      <div className={styles.blob2} />
-      <div className={styles.blob3} />
+    <div className="page">
+      <div className="blob blob-1" />
+      <div className="blob blob-2" />
+      <div className="blob blob-3" />
+      <div className="blob blob-4" />
+      <div className="blob blob-5" />
 
-      {/* Grid lines */}
-      <div className={styles.grid} />
+      <div className="container">
 
-      <div className={styles.container}>
-        {/* Left brand panel */}
-        <div className={styles.brand}>
-          <div className={styles.brandInner}>
-            <div className={styles.logo}>
-              <span className={styles.logoMark}>M</span>
+        {/* ── Brand Panel ── */}
+        <div className="brand">
+          <div className="brandInner">
+
+            <div className="logo">
+              <span className="logoMark">M</span>
             </div>
-            <h1 className={styles.brandName}>MetaBull</h1>
-            <p className={styles.brandTagline}>The next generation platform built for those who move fast.</p>
-            <div className={styles.brandFeatures}>
-              {['Secure JWT Auth', 'Role-based Access', 'Real-time Data'].map((f) => (
-                <div key={f} className={styles.feature}>
-                  <span className={styles.featureDot} />
-                  <span>{f}</span>
+
+            <div className="brandName">MetaBull</div>
+            <div className="brandSub">Universe</div>
+
+            <p className="brandTagline">
+              The all-in-one platform to build, manage, and scale
+              your digital presence — fast.
+            </p>
+
+            <div className="brandFeatures">
+              {features.map((f) => (
+                <div key={f.label} className="feature">
+                  <div className="featureIcon">
+                    <i className={f.icon} />
+                  </div>
+                  <span>{f.label}</span>
                 </div>
               ))}
             </div>
           </div>
-          <div className={styles.brandFooter}>
-            <div className={styles.stat}><span className={styles.statNum}>99.9%</span><span className={styles.statLabel}>Uptime</span></div>
-            <div className={styles.statDivider} />
-            <div className={styles.stat}><span className={styles.statNum}>256-bit</span><span className={styles.statLabel}>Encryption</span></div>
-            <div className={styles.statDivider} />
-            <div className={styles.stat}><span className={styles.statNum}>JWT</span><span className={styles.statLabel}>Secured</span></div>
+
+          <div className="brandFooter">
+            {stats.map((s, i) => (
+              <>
+                <div key={s.label} className="stat">
+                  <span className="statNum">{s.num}</span>
+                  <span className="statLabel">{s.label}</span>
+                </div>
+                {i < stats.length - 1 && <div className="statDivider" />}
+              </>
+            ))}
           </div>
         </div>
 
-        {/* Right form panel */}
-        <div className={styles.formPanel}>
-          {/* Mode switcher */}
-          <div className={styles.switcher}>
+        {/* ── Form Panel ── */}
+        <div className="formPanel">
+
+          {/* Tab switcher */}
+          <div className="switcher">
             <button
-              className={`${styles.switchBtn} ${mode === 'login' ? styles.switchActive : ''}`}
+              className={`switchBtn ${mode === 'login' ? 'switchActive' : ''}`}
               onClick={() => setMode('login')}
               type="button"
             >
               Sign In
             </button>
             <button
-              className={`${styles.switchBtn} ${mode === 'register' ? styles.switchActive : ''}`}
+              className={`switchBtn ${mode === 'register' ? 'switchActive' : ''}`}
               onClick={() => setMode('register')}
               type="button"
             >
               Sign Up
             </button>
-            <div className={`${styles.switchIndicator} ${mode === 'register' ? styles.switchIndicatorRight : ''}`} />
+            <div className={`switchIndicator ${mode === 'register' ? 'switchIndicatorRight' : ''}`} />
           </div>
 
-          <div className={styles.formHeader}>
-            <h2 className={styles.formTitle}>
-              {mode === 'login' ? 'Welcome back' : 'Create account'}
+          {/* Header */}
+          <div className="formHeader">
+            <h2 className="formTitle">
+              {mode === 'login' ? 'Welcome Back' : 'Get Started'}
             </h2>
-            <p className={styles.formSub}>
+            <p className="formSub">
               {mode === 'login'
-                ? 'Enter your credentials to access your dashboard'
-                : 'Join MetaBull and unlock full access'}
+                ? 'Sign in to access your MetaBull dashboard'
+                : 'Create your account and join MetaBull Universe'}
             </p>
           </div>
 
-          <form className={styles.form} onSubmit={handleSubmit} noValidate>
-            {/* Name field (register only) */}
-            <div className={`${styles.fieldGroup} ${mode === 'register' ? styles.visible : styles.hidden}`}>
-              <label className={styles.label}>Full Name</label>
-              <div className={styles.inputWrap}>
+          {/* Form */}
+          <form className="form" onSubmit={handleSubmit} noValidate>
+
+            {/* Name — register only */}
+            <div className={`fieldGroup ${mode === 'register' ? 'visible' : 'hidden'}`}>
+              <label className="label">Full Name</label>
+              <div className="inputWrap">
+                <i className="fa-solid fa-user inputIcon" />
                 <input
-                  className={styles.input}
+                  className="input"
                   type="text"
                   name="name"
                   placeholder="John Doe"
@@ -158,14 +177,15 @@ export default function AuthPage() {
             </div>
 
             {/* Email */}
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Email Address</label>
-              <div className={styles.inputWrap}>
+            <div className="fieldGroup">
+              <label className="label">Email Address</label>
+              <div className="inputWrap">
+                <i className="fa-solid fa-envelope inputIcon" />
                 <input
-                  className={styles.input}
+                  className="input"
                   type="email"
                   name="email"
-                  placeholder="you@example.com"
+                  placeholder="you@company.com"
                   value={form.email}
                   onChange={handleChange}
                   autoComplete="email"
@@ -174,11 +194,12 @@ export default function AuthPage() {
             </div>
 
             {/* Password */}
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Password</label>
-              <div className={styles.inputWrap}>
+            <div className="fieldGroup">
+              <label className="label">Password</label>
+              <div className="inputWrap">
+                <i className="fa-solid fa-lock inputIcon" />
                 <input
-                  className={styles.input}
+                  className="input"
                   type={showPass ? 'text' : 'password'}
                   name="password"
                   placeholder={mode === 'register' ? 'Min. 6 characters' : '••••••••'}
@@ -188,41 +209,46 @@ export default function AuthPage() {
                 />
                 <button
                   type="button"
-                  className={styles.eyeBtn}
+                  className="eyeBtn"
                   onClick={() => setShowPass((v) => !v)}
                   tabIndex={-1}
                 >
-                  <EyeIcon open={showPass} />
+                  <i className={`fa-solid ${showPass ? 'fa-eye-slash' : 'fa-eye'}`} />
                 </button>
               </div>
             </div>
 
             {/* Error */}
             {displayError && (
-              <div className={styles.errorBox}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
+              <div className="errorBox">
+                <i className="fa-solid fa-circle-exclamation" />
                 {displayError}
               </div>
             )}
 
             {/* Submit */}
-            <button className={styles.submitBtn} type="submit" disabled={isLoading}>
+            <button className="submitBtn" type="submit" disabled={isLoading}>
               {isLoading ? (
-                <><span className="spinner" /> {mode === 'login' ? 'Signing in...' : 'Creating account...'}</>
+                <>
+                  <span className="spinner" />
+                  {mode === 'login' ? 'Signing in...' : 'Creating account...'}
+                </>
               ) : (
-                <>{mode === 'login' ? 'Sign In' : 'Create Account'}</>
+                <>
+                  <i className={`fa-solid ${mode === 'login' ? 'fa-arrow-right-to-bracket' : 'fa-user-plus'}`} />
+                  {mode === 'login' ? 'Sign In' : 'Create Account'}
+                </>
               )}
             </button>
           </form>
 
           {mode === 'login' && (
-            <p className={styles.hint}>
-              Admin? Use <span className={styles.hintAccent}>metabull@metabull.com</span>
+            <p className="hint">
+              Admin access via <span className="hintAccent">admin@metabull.com</span>
             </p>
           )}
         </div>
+
       </div>
     </div>
   );

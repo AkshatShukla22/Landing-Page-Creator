@@ -1,114 +1,150 @@
+// frontend/src/pages/HomePage.jsx
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { getLandingPages, getStats } from '../store/landingSlice';
-import styles from '../styles/HomePage.module.css';
+import '../styles/HomePage.css';
 
-const StatCard = ({ icon, label, value, accent, sub }) => (
-  <div className={styles.statCard} style={{ '--accent': accent }}>
-    <div className={styles.statIcon}>{icon}</div>
-    <div className={styles.statInfo}>
-      <span className={styles.statVal} style={{ color: accent }}>{value}</span>
-      <span className={styles.statLabel}>{label}</span>
-      {sub && <span className={styles.statSub}>{sub}</span>}
-    </div>
-  </div>
-);
+const getGreeting = () => {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good Morning';
+  if (h < 17) return 'Good Afternoon';
+  return 'Good Evening';
+};
+
+const pillars = [
+  {
+    icon: 'fa-solid fa-rocket',
+    title: 'Instant Deploy',
+    desc: 'Publish high-performance landing pages in seconds — no code required.',
+  },
+  {
+    icon: 'fa-solid fa-chart-line',
+    title: 'Live Analytics',
+    desc: 'Track every visit, source, and conversion in real time from your dashboard.',
+  },
+  {
+    icon: 'fa-solid fa-layer-group',
+    title: 'Multi-Project',
+    desc: 'Manage unlimited brands and campaigns from a single unified workspace.',
+  },
+];
 
 export default function HomePage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user } = useSelector((s) => s.auth);
+  const { user }                   = useSelector((s) => s.auth);
   const { pages, stats, isLoading } = useSelector((s) => s.landing);
+  const { sidebarCollapsed }        = useSelector((s) => s.ui);
 
   useEffect(() => {
     dispatch(getLandingPages());
     dispatch(getStats());
   }, [dispatch]);
 
-  const greeting = () => {
-    const h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
+  const activeCount = pages.filter((p) => p.status === 'active').length;
 
-  const recentPages = pages.slice(0, 4);
+  const statTiles = [
+    { icon: 'fa-solid fa-file-lines',   label: 'Total Pages',      value: stats.totalPages ?? 0,                      sub: 'In workspace',      accent: '#a78bfa' },
+    { icon: 'fa-solid fa-eye',          label: 'Total Views',      value: stats.totalViews?.toLocaleString() ?? '0',  sub: 'Cumulative',        accent: '#d4af37' },
+    { icon: 'fa-solid fa-chart-bar',    label: 'Avg. Views / Page',value: stats.avgViews ?? 0,                        sub: 'Per page',          accent: '#10b981' },
+    { icon: 'fa-solid fa-circle-check', label: 'Active Pages',     value: activeCount,                                sub: 'Currently live',    accent: '#6366f1' },
+  ];
 
   return (
-    <div className="app-shell">
+    <div className="home-shell">
       <Sidebar />
-      <div className="main-content">
-        <div className="topbar">
-          <div>
-            <div className="topbar-title">Home</div>
-            <div className="topbar-sub">Welcome back 👋</div>
-          </div>
-          <div className={styles.topActions}>
-            <button className="btn btn-ghost btn-sm" onClick={() => navigate('/dashboard')}>View Dashboard</button>
-            <button className="btn btn-primary btn-sm" onClick={() => navigate('/create')}>+ Create New</button>
+
+      <div className="home-main" style={{ marginLeft: sidebarCollapsed ? 'var(--sb-collapsed, 64px)' : 'var(--sb-width, 220px)' }}>
+
+        {/* ── Topbar ── */}
+        <div className="home-topbar">
+          <span className="topbar-greeting">
+            {getGreeting()}, {user?.name?.split(' ')[0]}
+          </span>
+          <div className="topbar-actions">
+            <button className="btn-ghost-home" onClick={() => navigate('/dashboard')}>
+              <i className="fa-solid fa-table-columns" /> Dashboard
+            </button>
+            <button className="btn-gold-home" onClick={() => navigate('/create')}>
+              <i className="fa-solid fa-plus" /> New Page
+            </button>
           </div>
         </div>
 
-        <div className="scroll-area">
-          {/* Hero */}
-          <div className={styles.hero}>
-            <div className={styles.heroText}>
-              <h1 className={styles.heroTitle}>Create Beautiful<br />Landing Pages in Minutes</h1>
-              <p className={styles.heroSub}>Build, manage, and track stunning landing pages with our powerful platform.</p>
-              <div className={styles.heroBtns}>
-                <button className="btn btn-primary" onClick={() => navigate('/create')}>Start Creating</button>
-                <button className="btn btn-ghost" onClick={() => navigate('/dashboard')}>View Dashboard</button>
-              </div>
+        {/* ── Content ── */}
+        <div className="home-content">
+
+          {/* ── Hero ── */}
+          <div className="home-hero">
+            <div className="hero-kicker">
+              <div className="hero-kicker-line" />
+              <span className="hero-kicker-text">MetaBull Universe — Platform</span>
             </div>
-            <div className={styles.heroBg} />
+
+            <h1 className="hero-title">
+              Build Pages That
+              <span className="hero-title-accent">Convert.</span>
+            </h1>
+
+            <p className="hero-desc">
+              MetaBull Universe is a professional-grade platform for creating,
+              managing, and scaling landing pages — designed for teams that
+              demand performance and precision.
+            </p>
+
+            <div className="hero-ctas">
+              <button className="btn-gold-home" onClick={() => navigate('/create')}>
+                <i className="fa-solid fa-rocket" /> Launch a Page
+              </button>
+              <div className="hero-cta-divider" />
+              <span className="hero-stat-inline">
+                <strong>{pages.length}</strong> pages &nbsp;·&nbsp; <strong>{activeCount}</strong> live
+              </span>
+            </div>
           </div>
 
-          {/* Stats */}
-          <div className={styles.statsGrid}>
-            <StatCard icon="📄" label="Total Pages" value={stats.totalPages} accent="#a78bfa" sub="All landing pages" />
-            <StatCard icon="👁️" label="Total Views" value={stats.totalViews.toLocaleString()} accent="#f59e0b" sub="Cumulative views" />
-            <StatCard icon="📊" label="Avg. Views / Page" value={stats.avgViews} accent="#10b981" sub="Per page average" />
-            <StatCard icon="✅" label="Active Pages" value={pages.filter(p => p.status === 'active').length} accent="#6366f1" sub="Currently live" />
-          </div>
+          {/* ── Bottom: Stats + Pillars ── */}
+          <div className="home-bottom">
 
-          {/* Feature cards */}
-          <div className={styles.featureGrid}>
-            {[
-              { icon: '⚡', title: 'Lightning Fast', desc: 'Create & deploy in minutes' },
-              { icon: '👁️', title: 'Track Performance', desc: 'Built-in analytics' },
-              { icon: '📈', title: 'Grow Your Business', desc: 'Optimized pages' },
-            ].map((f) => (
-              <div key={f.title} className="card card-sm" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center', padding: '24px' }}>
-                <span style={{ fontSize: 28 }}>{f.icon}</span>
-                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{f.title}</span>
-                <span style={{ fontSize: 12, color: 'var(--muted)' }}>{f.desc}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Recent pages */}
-          {recentPages.length > 0 && (
-            <div className={styles.recentSection}>
-              <div className={styles.recentHeader}>
-                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: 'var(--text)' }}>Recent Pages</span>
-                <button className="btn btn-ghost btn-sm" onClick={() => navigate('/dashboard')}>View All</button>
-              </div>
-              <div className={styles.recentGrid}>
-                {recentPages.map((p) => (
-                  <div key={p._id} className={`card card-sm ${styles.recentCard}`}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)' }}>{p.channelName}</span>
-                      <span className={`badge ${p.status === 'active' ? 'badge-green' : 'badge-gray'}`}>{p.status}</span>
+            {/* Stats */}
+            <div>
+              <div className="section-label">Platform Stats</div>
+              <div className="stats-row">
+                {statTiles.map((s) => (
+                  <div key={s.label} className="stat-tile" style={{ '--accent': s.accent }}>
+                    <i className={`${s.icon} stat-tile-icon`} />
+                    <div className="stat-tile-val">
+                      {isLoading
+                        ? <span className="shimmer" style={{ display: 'inline-block', width: 36, height: 30 }} />
+                        : s.value
+                      }
                     </div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>/{p.slug}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 4 }}>👁 {p.views} views</div>
+                    <div className="stat-tile-label">{s.label}</div>
+                    <div className="stat-tile-sub">{s.sub}</div>
                   </div>
                 ))}
               </div>
             </div>
-          )}
+
+            {/* Pillars */}
+            <div>
+              <div className="section-label">What We Offer</div>
+              <div className="pillars-row">
+                {pillars.map((p) => (
+                  <div key={p.title} className="pillar">
+                    <div className="pillar-icon">
+                      <i className={p.icon} />
+                    </div>
+                    <div className="pillar-title">{p.title}</div>
+                    <div className="pillar-desc">{p.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>

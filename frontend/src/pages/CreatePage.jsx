@@ -1,3 +1,4 @@
+// frontend/src/pages/CreatePage.jsx
 import { useState, useRef, useEffect, memo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -6,55 +7,39 @@ import PhonePreview, { DESIGNS } from '../components/PhonePreview';
 import { createLandingPage, clearCreateError } from '../store/landingSlice';
 import { checkSlugAvailable } from '../services/landingService';
 import { uploadToCloudinary } from '../services/uploadService';
-import styles from '../styles/CreatePage.module.css';
+import '../styles/CreatePage.css';
 
 const initForm = {
   channelName: '', channelTitle: '', subscribers: '',
   slug: '', ctaText: 'Join on Telegram', channelLink: '',
   description1: '', description2: '',
-  design: 'modern-blue', metaPixelId: '', googleTagId: '',
+  design: 'obsidian', metaPixelId: '', googleTagId: '',
   status: 'active', logoBase64: '', logoUrl: '',
 };
 
-// Memoized preview — only re-renders when preview data actually changes
 const StablePreview = memo(({ data }) => <PhonePreview data={data} />);
-
-// Field wrapper defined OUTSIDE component — prevents re-creation on every render
-const Field = ({ label, required, hint, error, children }) => (
-  <div className="form-group">
-    <label className="form-label">
-      {label}{required && <span style={{ color: 'var(--error)', marginLeft: 2 }}>*</span>}
-    </label>
-    {children}
-    {hint && <span className="form-hint">{hint}</span>}
-    {error && <span className="form-error">{error}</span>}
-  </div>
-);
 
 export default function CreatePage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isCreating, createError } = useSelector((s) => s.landing);
-  const { user } = useSelector((s) => s.auth);
+  const { user }             = useSelector((s) => s.auth);
+  const { sidebarCollapsed } = useSelector((s) => s.ui);
 
-  // form = live state bound to inputs (updates every keystroke)
-  const [form, setFormState] = useState(initForm);
-  const formRef = useRef(initForm); // always has latest form without causing re-renders
-
-  // preview = debounced snapshot sent to PhonePreview only (500ms after typing stops)
-  const [preview, setPreview] = useState(initForm);
-
-  const [slugStatus, setSlugStatus] = useState(null);
+  const [form, setFormState]   = useState(initForm);
+  const formRef                = useRef(initForm);
+  const [preview, setPreview]  = useState(initForm);
+  const [slugStatus, setSlugStatus] = useState(null); // null | 'checking' | 'available' | 'taken'
   const [fieldErrors, setFieldErrors] = useState({});
   const [logoPreview, setLogoPreview] = useState('');
+  const [activeSection, setActiveSection] = useState('basic'); // basic | design | tracking
 
-  const fileRef = useRef();
-  const slugTimer = useRef();
+  const fileRef      = useRef();
+  const slugTimer    = useRef();
   const previewTimer = useRef();
 
   useEffect(() => { dispatch(clearCreateError()); }, [dispatch]);
 
-  // Central setter: updates form immediately, schedules preview update after 500ms idle
   const setForm = (updater) => {
     setFormState(prev => {
       const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater };
@@ -65,7 +50,6 @@ export default function CreatePage() {
     });
   };
 
-  // Design/status are selects — reflect instantly in preview
   const setInstant = (key, val) => {
     setFormState(prev => {
       const next = { ...prev, [key]: val };
@@ -91,7 +75,7 @@ export default function CreatePage() {
     setForm(f => {
       const next = { ...f, channelName: val };
       if (val && !f.slug) {
-        next.slug = val.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+        next.slug = val.toLowerCase().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-');
         triggerSlugCheck(next.slug);
       }
       return next;
@@ -99,14 +83,14 @@ export default function CreatePage() {
   };
 
   const handleSlugChange = (val) => {
-    const clean = val.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    const clean = val.toLowerCase().replace(/[^a-z0-9-]/g,'');
     setFormState(prev => { const next = { ...prev, slug: clean }; formRef.current = next; return next; });
     triggerSlugCheck(clean);
   };
 
   const handleGenerateSlug = () => {
-    const base = (formRef.current.channelName || 'page').toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
-    const rand = base + '-' + Math.random().toString(36).substring(2, 6);
+    const base = (formRef.current.channelName || 'page').toLowerCase().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-');
+    const rand = base + '-' + Math.random().toString(36).substring(2,6);
     setFormState(prev => { const next = { ...prev, slug: rand }; formRef.current = next; return next; });
     triggerSlugCheck(rand);
   };
@@ -115,14 +99,12 @@ export default function CreatePage() {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5MB'); return; }
-    // Show local preview instantly
     const reader = new FileReader();
     reader.onload = (ev) => {
       setLogoPreview(ev.target.result);
       setPreview(s => ({ ...s, logoUrl: ev.target.result }));
     };
     reader.readAsDataURL(file);
-    // Upload to Cloudinary directly from browser
     try {
       const { url } = await uploadToCloudinary(file);
       setFormState(prev => {
@@ -131,22 +113,20 @@ export default function CreatePage() {
         setPreview(s => ({ ...s, logoUrl: url }));
         return next;
       });
-    } catch (err) {
-      alert('Image upload failed: ' + err.message);
-    }
+    } catch (err) { alert('Upload failed: ' + err.message); }
   };
 
   const validate = () => {
     const f = formRef.current;
     const errs = {};
-    if (!f.channelName.trim()) errs.channelName = 'Required';
-    if (!f.channelTitle.trim()) errs.channelTitle = 'Required';
+    if (!f.channelName.trim())            errs.channelName   = 'Required';
+    if (!f.channelTitle.trim())           errs.channelTitle  = 'Required';
     if (!f.subscribers || isNaN(f.subscribers)) errs.subscribers = 'Enter valid number';
-    if (!f.slug.trim()) errs.slug = 'Required';
-    if (slugStatus === 'taken') errs.slug = 'Slug already taken';
-    if (!f.channelLink.trim()) errs.channelLink = 'Required';
-    if (!f.description1.trim()) errs.description1 = 'Required';
-    if (f.metaPixelId && !/^\d{15,16}$/.test(f.metaPixelId)) errs.metaPixelId = 'Must be 15-16 digits';
+    if (!f.slug.trim())                   errs.slug          = 'Required';
+    if (slugStatus === 'taken')           errs.slug          = 'Slug already taken';
+    if (!f.channelLink.trim())            errs.channelLink   = 'Required';
+    if (!f.description1.trim())           errs.description1  = 'Required';
+    if (f.metaPixelId && !/^\d{15,16}$/.test(f.metaPixelId)) errs.metaPixelId = '15-16 digits';
     if (f.googleTagId && !/^G-[A-Z0-9]+$/i.test(f.googleTagId)) errs.googleTagId = 'Format: G-XXXXXXXXXX';
     return errs;
   };
@@ -161,164 +141,299 @@ export default function CreatePage() {
     if (createLandingPage.fulfilled.match(result)) navigate('/dashboard');
   };
 
-  // Block unapproved users
+  // Blocked
   if (user?.role !== 'admin' && user?.isApproved === false) {
     return (
-      <div className="app-shell">
+      <div className="create-shell">
         <Sidebar />
-        <div className="main-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, textAlign: 'center', maxWidth: 420, padding: 40 }}>
-            <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(245,158,11,0.1)', border: '2px solid rgba(245,158,11,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>⏳</div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: 'var(--text)' }}>Approval Pending</h2>
-            <p style={{ color: 'var(--muted)', fontSize: 14, lineHeight: 1.7 }}>
-              Your account is awaiting admin approval. Once approved, you'll be able to create landing pages.
-            </p>
-            <div style={{ background: 'var(--surface)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 'var(--r-lg)', padding: '14px 20px', width: '100%' }}>
-              <span style={{ fontSize: 12, color: '#fbbf24', fontWeight: 600 }}>⏳ Status: Pending Review</span>
-            </div>
-            <button className="btn btn-ghost btn-sm" onClick={() => navigate('/home')}>← Back to Home</button>
+        <div className="create-main" style={{ marginLeft: sidebarCollapsed ? 'var(--sb-collapsed,64px)' : 'var(--sb-width,220px)' }}>
+          <div className="create-blocked">
+            <div className="blocked-icon"><i className="fa-solid fa-clock" /></div>
+            <div className="blocked-title">Approval Pending</div>
+            <p className="blocked-desc">Your account is awaiting admin approval. Once approved, you'll be able to create landing pages.</p>
+            <div className="blocked-status">⏳ Status: Pending Review</div>
+            <button className="create-btn-ghost" onClick={() => navigate('/home')}>
+              <i className="fa-solid fa-arrow-left" /> Back to Home
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
+  const marginLeft = sidebarCollapsed ? 'var(--sb-collapsed,64px)' : 'var(--sb-width,220px)';
+
   return (
-    <div className="app-shell">
+    <div className="create-shell">
       <Sidebar />
-      <div className="main-content">
-        <div className="topbar">
-          <button className={styles.backBtn} onClick={() => navigate('/dashboard')}>
-            ← Back to Dashboard
+
+      <div className="create-main" style={{ marginLeft }}>
+
+        {/* ── Topbar ── */}
+        <div className="create-topbar">
+          <button className="create-back-btn" onClick={() => navigate('/dashboard')}>
+            <i className="fa-solid fa-chevron-left" /> Dashboard
+          </button>
+          <div className="create-topbar-center">
+            <div className="create-page-label">MetaBull Universe</div>
+            <div className="create-page-title">New Landing Page</div>
+          </div>
+          <button
+            className="create-submit-btn"
+            onClick={handleSubmit}
+            disabled={isCreating}
+          >
+            {isCreating
+              ? <><div className="create-spinner" /> Creating...</>
+              : <><i className="fa-solid fa-rocket" /> Publish Page</>
+            }
           </button>
         </div>
 
-        <div className={styles.layout}>
-          {/* ── Form side ── */}
-          <div className={styles.formSide}>
-            <div className={styles.formHeader}>
-              <h2 className={styles.formTitle}>Create Landing Page</h2>
-              <p className={styles.formSub}>Build a stunning landing page for your Telegram channel</p>
+        {/* ── Body ── */}
+        <div className="create-body">
+
+          {/* ── Form column ── */}
+          <div className="create-form-col">
+
+            {/* Section tabs */}
+            <div className="create-section-tabs">
+              {[
+                { id: 'basic',    icon: 'fa-solid fa-pen', label: 'Content' },
+                { id: 'design',   icon: 'fa-solid fa-palette', label: 'Design' },
+                { id: 'tracking', icon: 'fa-solid fa-chart-line', label: 'Tracking' },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  className={`create-tab${activeSection === tab.id ? ' active' : ''}`}
+                  onClick={() => setActiveSection(tab.id)}
+                >
+                  <i className={tab.icon} />
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
-            <form onSubmit={handleSubmit} noValidate className={styles.form}>
-              {/* Logo */}
-              <div className={styles.logoUpload} onClick={() => fileRef.current.click()}>
-                {logoPreview
-                  ? <img src={logoPreview} alt="logo" className={styles.logoPreviewImg} />
-                  : (
-                    <div className={styles.logoPlaceholder}>
-                      <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" style={{ color: 'var(--muted)' }}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span>Image Input</span>
-                      <span style={{ fontSize: 10, color: 'var(--muted)' }}>1:1 • &lt; 5MB</span>
-                    </div>
-                  )
-                }
-                <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogoChange} />
-              </div>
+            <form onSubmit={handleSubmit} noValidate className="create-form">
 
-              {/* Row 1 — Channel Name / Title / Subscribers */}
-              <div className={styles.row3}>
-                <Field label="Channel Name" required error={fieldErrors.channelName}>
-                  <input className="form-input" placeholder="e.g., TechReviews"
-                    onChange={e => handleChannelNameChange(e.target.value)} />
-                </Field>
-                <Field label="Channel Title" required error={fieldErrors.channelTitle}>
-                  <input className="form-input" placeholder="e.g., Tech Reviews & Tutorials"
-                    onChange={e => setForm(f => ({ ...f, channelTitle: e.target.value }))} />
-                </Field>
-                <Field label="Subscribers" required hint="Enter manually" error={fieldErrors.subscribers}>
-                  <input className="form-input" placeholder="e.g., 10000" type="number"
-                    onChange={e => setForm(f => ({ ...f, subscribers: e.target.value }))} />
-                </Field>
-              </div>
+              {/* ── BASIC SECTION ── */}
+              {activeSection === 'basic' && (
+                <div className="create-section">
 
-              {/* Row 2 — Slug + CTA */}
-              <div className={styles.row2}>
-                <Field label="Custom URL Slug" required hint="Unique path for your landing page"
-                  error={fieldErrors.slug || (slugStatus === 'taken' ? '✗ Already taken' : null)}>
-                  <div className={styles.slugRow}>
-                    <div className={styles.slugInputWrap}>
-                      <input className={`form-input ${styles.slugInput}`} placeholder="e.g., my-awesome-channel"
-                        value={form.slug} onChange={e => handleSlugChange(e.target.value)} />
-                      {slugStatus === 'checking' && <span className={styles.slugStatus}><span className="spinner" style={{ width: 12, height: 12 }} /></span>}
-                      {slugStatus === 'available' && <span className={styles.slugStatus} style={{ color: 'var(--success)' }}>✓</span>}
-                      {slugStatus === 'taken'     && <span className={styles.slugStatus} style={{ color: 'var(--error)' }}>✗</span>}
+                  {/* Logo upload */}
+                  <div className="logo-upload-wrap">
+                    <div className="logo-upload" onClick={() => fileRef.current.click()}>
+                      {logoPreview
+                        ? <img src={logoPreview} alt="logo" className="logo-preview-img" />
+                        : <div className="logo-placeholder">
+                            <i className="fa-solid fa-image" />
+                            <span>Upload Logo</span>
+                            <span className="logo-hint">1:1 · max 5MB</span>
+                          </div>
+                      }
                     </div>
-                    <button type="button" className={`btn btn-ghost btn-sm ${styles.generateBtn}`} onClick={handleGenerateSlug}>Generate</button>
+                    <div className="logo-upload-info">
+                      <div className="logo-upload-title">Channel Logo</div>
+                      <div className="logo-upload-sub">Square image recommended. Will appear in preview.</div>
+                    </div>
+                    <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogoChange} />
                   </div>
-                  {slugStatus === 'available' && <span className="form-hint" style={{ color: 'var(--success)' }}>✓ Available</span>}
-                </Field>
-                <Field label="CTA Button Text" required>
-                  <input className="form-input" defaultValue={form.ctaText}
-                    onChange={e => setForm(f => ({ ...f, ctaText: e.target.value }))} />
-                </Field>
-              </div>
 
-              {/* Row 3 — Status / Design / Description 1 */}
-              <div className={styles.row3}>
-                <Field label="Status" required>
-                  <select className="form-select" value={form.status} onChange={e => setInstant('status', e.target.value)}>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </Field>
-                <Field label="Design" required>
-                  <select className="form-select" value={form.design} onChange={e => setInstant('design', e.target.value)}>
-                    {DESIGNS.map(d => <option key={d.value} value={d.value}>{d.emoji} {d.label}</option>)}
-                  </select>
-                </Field>
-                <Field label="Description 1" required error={fieldErrors.description1}>
-                  <input className="form-input" placeholder="Main channel description"
-                    onChange={e => setForm(f => ({ ...f, description1: e.target.value }))} />
-                </Field>
-              </div>
+                  {/* Row: Name + Title */}
+                  <div className="create-row-2">
+                    <div className="create-field">
+                      <label className="create-label">Channel Name <span className="req">*</span></label>
+                      <input className={`create-input${fieldErrors.channelName?' error':''}`} placeholder="e.g., MetaBull Official"
+                        onChange={e => handleChannelNameChange(e.target.value)} />
+                      {fieldErrors.channelName && <span className="field-err">{fieldErrors.channelName}</span>}
+                    </div>
+                    <div className="create-field">
+                      <label className="create-label">Channel Title <span className="req">*</span></label>
+                      <input className={`create-input${fieldErrors.channelTitle?' error':''}`} placeholder="e.g., Tech Reviews & Tutorials"
+                        onChange={e => setForm(f => ({ ...f, channelTitle: e.target.value }))} />
+                      {fieldErrors.channelTitle && <span className="field-err">{fieldErrors.channelTitle}</span>}
+                    </div>
+                  </div>
 
-              {/* Row 4 — Description 2 / Channel Link */}
-              <div className={styles.row2}>
-                <Field label="Description 2 (Optional)">
-                  <input className="form-input" placeholder="Additional description"
-                    onChange={e => setForm(f => ({ ...f, description2: e.target.value }))} />
-                </Field>
-                <Field label="Channel Link" required error={fieldErrors.channelLink}>
-                  <input className="form-input" placeholder="e.g., https://t.me/yourchannel"
-                    onChange={e => setForm(f => ({ ...f, channelLink: e.target.value }))} />
-                </Field>
-              </div>
+                  {/* Row: Subscribers + Status */}
+                  <div className="create-row-2">
+                    <div className="create-field">
+                      <label className="create-label">Subscribers <span className="req">*</span></label>
+                      <input className={`create-input${fieldErrors.subscribers?' error':''}`} placeholder="e.g., 128000" type="number"
+                        onChange={e => setForm(f => ({ ...f, subscribers: e.target.value }))} />
+                      {fieldErrors.subscribers && <span className="field-err">{fieldErrors.subscribers}</span>}
+                    </div>
+                    <div className="create-field">
+                      <label className="create-label">Status</label>
+                      <select className="create-select" value={form.status} onChange={e => setInstant('status', e.target.value)}>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    </div>
+                  </div>
 
-              {/* Row 5 — Tracking */}
-              <div className={styles.row3}>
-                <Field label="Meta Pixel ID" required hint="15-16 digit number" error={fieldErrors.metaPixelId}>
-                  <input className="form-input" placeholder="e.g., 1234567890123456"
-                    onChange={e => setForm(f => ({ ...f, metaPixelId: e.target.value.replace(/\D/g, '').slice(0, 16) }))}
-                    maxLength={16} />
-                </Field>
-                <Field label="Google Tag ID (Optional)" hint="Format: G-XXXXXXXXXX" error={fieldErrors.googleTagId}>
-                  <input className="form-input" placeholder="e.g., G-XXXXXXXXXX"
-                    onChange={e => setForm(f => ({ ...f, googleTagId: e.target.value }))} />
-                </Field>
-                <div />
-              </div>
+                  {/* Slug */}
+                  <div className="create-field">
+                    <label className="create-label">URL Slug <span className="req">*</span></label>
+                    <div className="slug-row">
+                      <div className="slug-input-wrap">
+                        <span className="slug-prefix">/</span>
+                        <input
+                          className={`create-input slug-input${fieldErrors.slug?' error':''}`}
+                          placeholder="my-channel-page"
+                          value={form.slug}
+                          onChange={e => handleSlugChange(e.target.value)}
+                        />
+                        <span className={`slug-status${slugStatus==='available'?' avail':slugStatus==='taken'?' taken':''}`}>
+                          {slugStatus==='checking' && <div className="create-spinner-sm" />}
+                          {slugStatus==='available' && <i className="fa-solid fa-check" />}
+                          {slugStatus==='taken'     && <i className="fa-solid fa-xmark" />}
+                        </span>
+                      </div>
+                      <button type="button" className="slug-gen-btn" onClick={handleGenerateSlug}>Generate</button>
+                    </div>
+                    {fieldErrors.slug && <span className="field-err">{fieldErrors.slug}</span>}
+                    {slugStatus==='available' && <span className="field-ok">Slug is available</span>}
+                  </div>
 
+                  {/* CTA + Channel link */}
+                  <div className="create-row-2">
+                    <div className="create-field">
+                      <label className="create-label">CTA Button Text</label>
+                      <input className="create-input" defaultValue={form.ctaText}
+                        onChange={e => setForm(f => ({ ...f, ctaText: e.target.value }))} />
+                    </div>
+                    <div className="create-field">
+                      <label className="create-label">Channel Link <span className="req">*</span></label>
+                      <input className={`create-input${fieldErrors.channelLink?' error':''}`} placeholder="https://t.me/yourchannel"
+                        onChange={e => setForm(f => ({ ...f, channelLink: e.target.value }))} />
+                      {fieldErrors.channelLink && <span className="field-err">{fieldErrors.channelLink}</span>}
+                    </div>
+                  </div>
+
+                  {/* Descriptions */}
+                  <div className="create-field">
+                    <label className="create-label">Description <span className="req">*</span></label>
+                    <textarea className={`create-textarea${fieldErrors.description1?' error':''}`} placeholder="Main channel description..."
+                      rows={3} onChange={e => setForm(f => ({ ...f, description1: e.target.value }))} />
+                    {fieldErrors.description1 && <span className="field-err">{fieldErrors.description1}</span>}
+                  </div>
+
+                  <div className="create-field">
+                    <label className="create-label">Description 2 <span className="optional">(optional)</span></label>
+                    <textarea className="create-textarea" placeholder="Additional info..." rows={2}
+                      onChange={e => setForm(f => ({ ...f, description2: e.target.value }))} />
+                  </div>
+                </div>
+              )}
+
+              {/* ── DESIGN SECTION ── */}
+              {activeSection === 'design' && (
+                <div className="create-section">
+                  <div className="section-heading">
+                    <i className="fa-solid fa-swatchbook" />
+                    Choose a design theme for your landing page
+                  </div>
+                  <div className="design-grid">
+                    {DESIGNS.map(d => (
+                      <button
+                        key={d.value}
+                        type="button"
+                        className={`design-thumb${form.design === d.value ? ' selected' : ''}`}
+                        onClick={() => setInstant('design', d.value)}
+                      >
+                        <span className="design-thumb-emoji">{d.emoji}</span>
+                        <span className="design-thumb-label">{d.label}</span>
+                        {form.design === d.value && (
+                          <span className="design-thumb-check">
+                            <i className="fa-solid fa-check" />
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── TRACKING SECTION ── */}
+              {activeSection === 'tracking' && (
+                <div className="create-section">
+                  <div className="section-heading">
+                    <i className="fa-solid fa-chart-line" />
+                    Add tracking pixels to measure your page performance
+                  </div>
+
+                  <div className="tracking-card">
+                    <div className="tracking-card-header">
+                      <i className="fa-brands fa-meta" />
+                      <div>
+                        <div className="tracking-card-title">Meta Pixel</div>
+                        <div className="tracking-card-sub">Facebook & Instagram Ads tracking</div>
+                      </div>
+                    </div>
+                    <div className="create-field">
+                      <label className="create-label">Pixel ID <span className="req">*</span></label>
+                      <input className={`create-input${fieldErrors.metaPixelId?' error':''}`}
+                        placeholder="e.g., 1234567890123456"
+                        value={form.metaPixelId}
+                        onChange={e => setForm(f => ({ ...f, metaPixelId: e.target.value.replace(/\D/g,'').slice(0,16) }))}
+                        maxLength={16} />
+                      {fieldErrors.metaPixelId
+                        ? <span className="field-err">{fieldErrors.metaPixelId}</span>
+                        : <span className="field-hint">15-16 digit number from Events Manager</span>
+                      }
+                    </div>
+                  </div>
+
+                  <div className="tracking-card">
+                    <div className="tracking-card-header">
+                      <i className="fa-brands fa-google" />
+                      <div>
+                        <div className="tracking-card-title">Google Tag</div>
+                        <div className="tracking-card-sub">Google Analytics & Ads tracking</div>
+                      </div>
+                    </div>
+                    <div className="create-field">
+                      <label className="create-label">Tag ID <span className="optional">(optional)</span></label>
+                      <input className={`create-input${fieldErrors.googleTagId?' error':''}`}
+                        placeholder="e.g., G-XXXXXXXXXX"
+                        value={form.googleTagId}
+                        onChange={e => setForm(f => ({ ...f, googleTagId: e.target.value }))} />
+                      {fieldErrors.googleTagId
+                        ? <span className="field-err">{fieldErrors.googleTagId}</span>
+                        : <span className="field-hint">Format: G-XXXXXXXXXX from Google Analytics</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Error */}
               {createError && (
-                <div className={styles.errorBox}>
-                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <div className="create-error-box">
+                  <i className="fa-solid fa-circle-exclamation" />
                   {createError}
                 </div>
               )}
 
-              <button type="submit" className={`btn btn-primary w-full ${styles.submitBtn}`} disabled={isCreating}>
-                {isCreating ? <><span className="spinner" /> Creating...</> : 'Create Landing Page'}
-              </button>
             </form>
           </div>
 
-          {/* ── Phone preview — receives debounced data only ── */}
-          <div className={styles.previewSide}>
-            <StablePreview data={preview} />
+          {/* ── Preview column ── */}
+          <div className="create-preview-col">
+            <div className="preview-sticky">
+              <div className="preview-label-row">
+                <span className="preview-section-label">
+                  <i className="fa-solid fa-mobile-screen" /> Preview
+                </span>
+                <span className="preview-design-name">
+                  {DESIGNS.find(d => d.value === form.design)?.emoji} {DESIGNS.find(d => d.value === form.design)?.label}
+                </span>
+              </div>
+              <StablePreview data={preview} />
+            </div>
           </div>
+
         </div>
       </div>
     </div>

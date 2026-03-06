@@ -1,3 +1,11 @@
+/* ============================================================
+   LandingPageView.module.css
+   Phone-framed landing page — desktop gets device chrome,
+   mobile fills full screen. Performance-first.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap&display=swap');
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body, #root {
@@ -7,38 +15,89 @@ html, body, #root {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── Full page backdrop ─────────────────────────────────── */
 .fullPage {
-  min-height: 100vh;
+  height: 100vh;
   width: 100vw;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.4s ease;
-  padding: 20px 16px;
+  position: relative;
 }
 
-/* Phone frame — fixed mobile width, never wider */
+/* ── Phone frame — desktop only ─────────────────────────── */
 .phoneFrame {
-  width: 100%;
-  max-width: 390px;
-  min-height: 100vh;
+  width: 375px;
+  height: calc(100vh - 48px);
+  max-height: 780px;
   display: flex;
   flex-direction: column;
+  position: relative;
+
+  /* Subtle device chrome — not overwhelming */
+  border-radius: 40px;
+  border: 6px solid rgba(255,255,255,0.09);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.05),
+    0 8px 32px rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.10);
+
+  overflow: hidden;
+  will-change: transform;
+  contain: layout style paint;
 }
 
+/* Notch bar */
+.phoneFrame::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 6px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 10px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Bottom home indicator */
+.phoneFrame::after {
+  content: '';
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 4px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 10px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* ── Scrollable content inside frame ────────────────────── */
 .content {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
-  padding: 40px 24px 32px;
+  padding: 52px 24px 40px;
   flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.content::-webkit-scrollbar { display: none; }
 
-/* Logo */
+/* ── Logo ───────────────────────────────────────────────── */
 .logoWrap {
-  width: 100px;
-  height: 100px;
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
   border: 2px solid;
   display: flex;
@@ -47,26 +106,31 @@ html, body, #root {
   overflow: hidden;
   flex-shrink: 0;
   transition: background 0.4s;
+  /* Prevent layout shift while image loads */
+  background-color: rgba(255,255,255,0.05);
 }
 
 .logoImg {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* GPU decode hint */
+  content-visibility: auto;
 }
 
-/* Text */
+/* ── Text ───────────────────────────────────────────────── */
 .channelName {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.5px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
   text-align: center;
   transition: color 0.4s;
 }
 
 .channelTitle {
   font-family: 'Syne', sans-serif;
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 800;
   text-align: center;
   line-height: 1.2;
@@ -77,82 +141,119 @@ html, body, #root {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
-  padding: 7px 16px;
+  padding: 6px 14px;
   border-radius: 24px;
   transition: color 0.4s, background 0.4s;
 }
 
 .desc {
-  font-size: 14px;
+  font-size: 13.5px;
   text-align: center;
   line-height: 1.65;
-  max-width: 320px;
+  max-width: 300px;
   transition: color 0.4s;
 }
 
 .divider {
-  width: 60px;
+  width: 48px;
   height: 1px;
   border-radius: 2px;
   transition: background 0.4s;
 }
 
-/* CTA button */
+/* ── CTA button ─────────────────────────────────────────── */
 .ctaBtn {
   width: 100%;
-  max-width: 320px;
-  padding: 16px 24px;
+  max-width: 300px;
+  padding: 15px 24px;
   border-radius: 50px;
   border: none;
   cursor: pointer;
   font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  transition: all 0.3s;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  gap: 9px;
+  /* Use transform for hover — avoids reflow */
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
   letter-spacing: 0.2px;
+  /* Hint browser about upcoming transform */
+  will-change: transform;
+  /* Tap highlight off on mobile */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .ctaBtn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+  box-shadow: 0 14px 36px rgba(0,0,0,0.4);
 }
 
 .ctaBtn:active {
-  transform: translateY(0);
+  transform: translateY(1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
 }
 
-/* Disclaimer */
+/* ── Disclaimer ─────────────────────────────────────────── */
 .disclaimer {
-  font-size: 10.5px;
+  font-size: 10px;
   text-align: center;
   line-height: 1.6;
-  opacity: 0.45;
-  max-width: 300px;
-  padding-top: 8px;
+  opacity: 0.4;
+  max-width: 280px;
+  padding-top: 4px;
+  padding-bottom: 20px;  /* clears home indicator */
 }
 
-/* Loading */
+/* ── Loading ─────────────────────────────────────────────── */
 .loader {
-  width: 36px;
-  height: 36px;
-  border: 3px solid rgba(255,255,255,0.1);
+  width: 32px;
+  height: 32px;
+  border: 2.5px solid rgba(255,255,255,0.08);
   border-top-color: #7c3aed;
   border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+  animation: spin 0.65s linear infinite;
+  /* GPU-composited — no layout thrash */
+  will-change: transform;
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Mobile — fill full screen naturally */
-@media (max-width: 430px) {
-  .fullPage { padding: 0; align-items: flex-start; }
-  .phoneFrame { max-width: 100%; }
-  .content { padding: 48px 20px 40px; }
+/* ── Mobile: full-screen, no device chrome ──────────────── */
+@media (max-width: 480px) {
+  .fullPage {
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+
+  .phoneFrame {
+    width: 100%;
+    height: auto;
+    min-height: 100vh;
+    max-height: none;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+  }
+
+  /* Hide notch & home indicator on real devices */
+  .phoneFrame::before,
+  .phoneFrame::after { display: none; }
+
+  .content {
+    padding: 52px 20px 40px;
+    overflow-y: visible;
+  }
+}
+
+/* ── Tablet: smaller frame, still framed ───────────────── */
+@media (min-width: 481px) and (max-width: 768px) {
+  .phoneFrame {
+    width: 360px;
+    border-radius: 36px;
+  }
 }
