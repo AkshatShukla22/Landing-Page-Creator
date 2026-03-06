@@ -3,7 +3,9 @@ import axios from 'axios';
 import store from '../store/store';
 import { logout } from '../store/authSlice';
 
-const apiClient = axios.create({ baseURL: '/api' });
+const apiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || '/api',
+});
 
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('mb_token');
