@@ -52,5 +52,3 @@ function App() {
 }
 
 export default App;
-
-// Deployed and completed
